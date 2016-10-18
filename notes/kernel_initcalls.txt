@@ -1,0 +1,32 @@
+The explanation is with Linux 4.4.15
+
+Initcalls. 
+---------
+
+During the initialization after the architecture specific initialization, the architecture independent init function start_kernel (in init/main.c) is called. The start_kernel calls the rest_init at the end. This function, executed as PID 0 creates a thread with kernel_init as entry point. This thread becomes PID-1. One of the first functions kernel_init performs is call all the to kernel_init_freeable, which as the name suggest calls several init calls. 
+
+Our interest is the do_basic_setup called by kernel_init_freeable. This functions does several initialization like driver_init and do_initcalls. The driver_init initializes the driver model and do_initcall does initializes the drivers. do_initcall does the initialization through function pointers defined in the array initcall_levels. The function pointers are saved in the .init section of kernel image. 
+
+The function pointers are defined at each level using different calls like 
+
+core_initcall(fn)          
+core_initcall_sync(fn)     
+postcore_initcall(fn)      
+postcore_initcall_sync(fn) 
+arch_initcall(fn)          
+arch_initcall_sync(fn)     
+subsys_initcall(fn)        
+subsys_initcall_sync(fn)   
+fs_initcall(fn)            
+fs_initcall_sync(fn)       
+rootfs_initcall(fn)        
+device_initcall(fn)        
+device_initcall_sync(fn)   
+late_initcall(fn)          
+late_initcall_sync(fn)     
+
+The functions defined as part of above initcall are called in the same order as above and defined for the built-in code not for module. If the MODULE is defined these calls are defined to module_init.  
+
+In case of the module_init function, it expands to device_initcall if the driver is statically built in or otherwise when the driver is compiled as module, it defines a init_module function. 
+
+
